@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="b54ab3b1-7d40-45ff-bd00-5f67940c720a" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="421e7742-6cca-47ba-9fce-bdffc386eb11" >
+		<db:generic-connection url="jdbc:postgresql://localhost:5432/ABC" driverClassName="org.postgresql.Driver" user="${secure::db.user}" password="${secure::db.password}" />
+	</db:config>
+	<db:config name="Database_Config1" doc:name="Database Config" doc:id="922c84e3-20ed-41a9-ae37-0861c74f8c8d" >
+		<db:generic-connection url="jdbc:postgresql://localhost:5432/ABC" driverClassName="org.postgresql.Driver" user="${secure::db.user}" password="${secure::db.password}" />
+	</db:config>
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="7714df9d-b7f1-40e2-a62f-86b474dbbf5e" file="dev-secure.properties" key="mule12345" >
+		<secure-properties:encrypt algorithm="Blowfish" />
+	</secure-properties:config>
+	<flow name="abc-customer-getCustomer" doc:id="5c8c46a4-ed1e-4a0b-be37-0030eec7a082" >
+		<http:listener doc:name="Listener" doc:id="f4f7c9fe-5b07-4f8f-b9a3-1954c83b29ef" config-ref="HTTP_Listener_config" path="/getCustomer"/>
+		<db:select doc:name="Select" doc:id="34ed07bc-a753-4f31-bf3b-9088e69c9635" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM public."Contact"]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="08264d10-8dac-45b2-9479-db68a2ae9b46" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="595ce7ae-c2e3-43c8-8454-6d8407d26495" />
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="5cebff0f-6889-4451-bbfb-4210f9b61bfe" >
+				<ee:transform doc:name="Transform Message" doc:id="573e01d5-5382-4844-91ed-1830f8bd649f" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message" : "Flow Error"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="abc-customer-createCustomer" doc:id="5b57dbf0-40b4-429a-9cad-55f8d6768b79" >
+		<http:listener doc:name="Listener" doc:id="4276e22b-beaa-40c2-a835-57df0e2169b1" config-ref="HTTP_Listener_config" path="/postCustomer" />
+		<db:insert doc:name="Insert" doc:id="c1a91c65-73a9-459b-92ba-b11c702c528b" config-ref="Database_Config">
+			<db:sql ><![CDATA[INSERT INTO public."Contact"("FirstName", "LastName", "Phone", "Email") 
+VALUES (:FirstName, :LastName, :Phone, :Email);]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+  FirstName: payload.FirstName,
+  LastName: payload.LastName,
+  Phone: payload.Phone,
+  Email: payload.Email
+}]]]></db:input-parameters>
+		</db:insert>
+		<ee:transform doc:name="Transform Message" doc:id="5e69cbbb-0e7d-45b4-82d8-43f68e52c55c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message" : "Data has been created."
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="645f982c-9934-4a16-b32a-69a7268e172d" />
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="51a85b72-3546-40ce-baaa-555addbbfbe8" >
+				<ee:transform doc:name="Transform Message" doc:id="8500c881-b02c-430a-a427-a3340f15e0c7" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message" : "Flow Error"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="abc-customer-deleteCustomer" doc:id="9cd7fcae-a7c8-4b83-8647-30e2f5d6a945" >
+		<http:listener doc:name="Listener" doc:id="5313a37a-b315-49e4-a07e-8326c79d313c" config-ref="HTTP_Listener_config" path="/deleteCustomer" />
+		<db:delete doc:name="Delete" doc:id="c7b6a4bc-4778-4ddf-9f40-fbc9a1fa4220" config-ref="Database_Config">
+			<db:sql ><![CDATA[DELETE FROM public."Contact"
+WHERE "FirstName" = :FirstName;]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+  FirstName: payload.FirstName
+}]]]></db:input-parameters>
+		</db:delete>
+		<ee:transform doc:name="Transform Message" doc:id="a5f3a61e-89b9-4231-bd50-b707a59d02d4" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message" : "Data has been deleted."
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="924576bb-9d50-4834-8c3f-bf6da4e65870" />
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="464de7c1-da37-4ce3-8ae4-952ea2704f14" >
+				<ee:transform doc:name="Transform Message" doc:id="9136a64e-a9e4-40a6-9adc-49a26b79ea46" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message" : "Flow Error"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="abc-customer-updateCustomer" doc:id="1cdb0f68-c423-45d8-8d88-7b78c4126c9b" >
+		<http:listener doc:name="Listener" doc:id="7231e30e-9dac-4554-ad97-1da8a02e6aa7" config-ref="HTTP_Listener_config" path="/updateCustomer" />
+		<db:update doc:name="Update" doc:id="2b014cec-9399-4151-b522-a3eaf504571c" config-ref="Database_Config1">
+			<db:sql ><![CDATA[UPDATE public."Contact"
+SET "LastName" = :LastName, 
+    "Phone" = :Phone, 
+    "Email" = :Email
+WHERE "FirstName" = :FirstName;]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{
+  FirstName: payload.FirstName,
+  LastName: payload.LastName,
+  Phone: payload.Phone,
+  Email: payload.Email
+}]]]></db:input-parameters>
+		</db:update>
+		<ee:transform doc:name="Transform Message" doc:id="76d40432-2a5e-4c91-b508-ad52e4253499" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message" : "Data has been updated."
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="baa0886a-84ee-4104-83db-ae5510fee052" />
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="cc20abdc-41b2-4940-93e3-819feae3d3e6" >
+				<ee:transform doc:name="Transform Message" doc:id="51ec87a1-a9ff-4178-8f69-df8b6fbe1d82" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message" : "Flow Error"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>
