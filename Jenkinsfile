@@ -1,17 +1,22 @@
 pipeline {
   agent any
   stages {
-    stage('Build') {
+    stage('Clean') {
       steps {
-           // bat 'mvn clean package'
-            echo "build success"    
+           	bat 'mvn clean'
+            echo "Clean success"    
       }
     }
- 
+    stage('Package') {
+      steps {
+           	bat 'mvn package'
+            echo "Package success"    
+      }
+    }
     stage('Test') {
       steps {
-          //bat 'mvn test -Dmunit.test=employee-ws-suite.xml#employee-wsFlow-test'
-          echo "test success"
+           	bat 'mvn test'
+            echo "Test success"    
       }
     }
     stage('Run') {
@@ -28,5 +33,4 @@ pipeline {
       }
     }
 }
- 
- 
+}
