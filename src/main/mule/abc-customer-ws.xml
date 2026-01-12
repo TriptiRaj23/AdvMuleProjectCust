@@ -20,7 +20,7 @@ http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/sc
 		<secure-properties:encrypt algorithm="Blowfish" />
 	</secure-properties:config>
 	<flow name="abc-customer-getCustomer" doc:id="5c8c46a4-ed1e-4a0b-be37-0030eec7a082" >
-		<http:listener doc:name="Listener" doc:id="f4f7c9fe-5b07-4f8f-b9a3-1954c83b29ef" config-ref="HTTP_Listener_config" path="/getCustomer"/>
+		<http:listener doc:name="Listener" doc:id="f4f7c9fe-5b07-4f8f-b9a3-1954c83b29ef" config-ref="HTTP_Listener_config" path="/getCustomer" outputMimeType="application/json"/>
 		<db:select doc:name="Select" doc:id="34ed07bc-a753-4f31-bf3b-9088e69c9635" config-ref="Database_Config">
 			<db:sql ><![CDATA[SELECT * FROM public."Contact"]]></db:sql>
 		</db:select>
@@ -49,7 +49,7 @@ output application/json
 		</error-handler>
 	</flow>
 	<flow name="abc-customer-createCustomer" doc:id="5b57dbf0-40b4-429a-9cad-55f8d6768b79" >
-		<http:listener doc:name="Listener" doc:id="4276e22b-beaa-40c2-a835-57df0e2169b1" config-ref="HTTP_Listener_config" path="/postCustomer" />
+		<http:listener doc:name="Listener" doc:id="4276e22b-beaa-40c2-a835-57df0e2169b1" config-ref="HTTP_Listener_config" path="/postCustomer" outputMimeType="application/json"/>
 		<db:insert doc:name="Insert" doc:id="c1a91c65-73a9-459b-92ba-b11c702c528b" config-ref="Database_Config">
 			<db:sql ><![CDATA[INSERT INTO public."Contact"("FirstName", "LastName", "Phone", "Email") 
 VALUES (:FirstName, :LastName, :Phone, :Email);]]></db:sql>
@@ -66,25 +66,12 @@ VALUES (:FirstName, :LastName, :Phone, :Email);]]></db:sql>
 output application/json
 ---
 {
-	"message" : "Data has been created."
-}]]></ee:set-payload>
+ "message": "Data has been created."
+ 
+ }]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 		<logger level="INFO" doc:name="Logger" doc:id="645f982c-9934-4a16-b32a-69a7268e172d" />
-		<error-handler >
-			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="51a85b72-3546-40ce-baaa-555addbbfbe8" >
-				<ee:transform doc:name="Transform Message" doc:id="8500c881-b02c-430a-a427-a3340f15e0c7" >
-					<ee:message >
-						<ee:set-payload ><![CDATA[%dw 2.0
-output application/json
----
-{
-	"message" : "Flow Error"
-}]]></ee:set-payload>
-					</ee:message>
-				</ee:transform>
-			</on-error-continue>
-		</error-handler>
 	</flow>
 	<flow name="abc-customer-deleteCustomer" doc:id="9cd7fcae-a7c8-4b83-8647-30e2f5d6a945" >
 		<http:listener doc:name="Listener" doc:id="5313a37a-b315-49e4-a07e-8326c79d313c" config-ref="HTTP_Listener_config" path="/deleteCustomer" />
@@ -122,7 +109,7 @@ output application/json
 		</error-handler>
 	</flow>
 	<flow name="abc-customer-updateCustomer" doc:id="1cdb0f68-c423-45d8-8d88-7b78c4126c9b" >
-		<http:listener doc:name="Listener" doc:id="7231e30e-9dac-4554-ad97-1da8a02e6aa7" config-ref="HTTP_Listener_config" path="/updateCustomer" />
+		<http:listener doc:name="Listener" doc:id="7231e30e-9dac-4554-ad97-1da8a02e6aa7" config-ref="HTTP_Listener_config" path="/updateCustomer" outputMimeType="application/json"/>
 		<db:update doc:name="Update" doc:id="2b014cec-9399-4151-b522-a3eaf504571c" config-ref="Database_Config1">
 			<db:sql ><![CDATA[UPDATE public."Contact"
 SET "LastName" = :LastName, 
